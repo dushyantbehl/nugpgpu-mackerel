@@ -1,0 +1,167 @@
+
+/*
+ * nugpgpu.dev
+ *
+ * DESCRIPTION: New GPGPU driver for Intel(R) Haswell CPU's.
+ */
+
+device nugpgpu lsbfirst ( addr base ) "Description for Intel Haswell GPGPU's" {
+
+    constants mmio "MMIO Constants for NUGPGPU" {
+        bar = 0x0 "Bar offset";
+        size = 0x200000 "Bar size - 2*1024*1024";
+    };
+
+    constants ring_id "Intel ring id's" {
+        RENDER_RING = 0b00001  "Render ring id - (1<<RCS)";
+        BSD_RING    = 0b00010  "BSD ring id - (1<<VCS)";
+        BLT_RING    = 0b00100  "BLT ring id - (1<<BCS)";
+        VEBOX_RING  = 0b01000  "VEBOX rind id - (1<<VECS)";
+        BSD2_RING   = 0b10000  "BSD2 rind id - (1<<VCS2)";
+    }; 
+
+    //TODO: find the descs.
+    constants gtt_size_offsets "Nugpgpu GTT size constants" {
+        HSW_GMCH_CTRL = 0x50;
+        HSW_GMCH_GGMS_SHIFT = 8;
+        HSW_GMCH_GGMS_REVSHIFT = 20;
+        HSW_GMCH_GGMS_MASK = 0x3;
+    };
+
+    constants gtt_mode_select "nugpgpu gtt mode select" {
+        HSW_GMCH_GMS_SHIFT  = 3;
+        HSW_GMCH_GMS_REVSHIFT = 25;
+        HSW_GMCH_GMS_MASK = 0x1f;
+    };
+
+    constants fpga_hsw_dbg "Debug constants" {
+        FPGA_DBG_RM_NOCLAIM  = 0x80000000 "0x80000000  = (1<<31)";
+    };
+
+    constants forcewake "HSW forcewake constants" {
+        FORCEWAKE_KERNEL = 0x1;
+        FORCEWAKE_ACK_TIMEOUT_MS = 2;
+        GT_FIFO_CPU_ERROR_MASK = 7;
+    };
+
+    constants thread_status_core_mask "HSW thread0 status core mask" {
+        HSW_GT_THREAD_STATUS_CORE_MASK = 0x70007;
+    };
+
+    /* Forcewake and gpu unclaimed regrw debug randomness */
+    constants register_offsets "HSW register offsets" {
+        FPGA_DBG = 0x42300;
+        GTFIFODBG = 0x120000;
+        HSW_ERR_INT = 0x44040;
+        ECOBUS = 0xA180;
+        FORCEWAKE_MAX_OFFSET = 0x40000;
+        FORCEWAKE = 0xA18C;
+        FORCEWAKE_MT = 0xA188;
+        FORCEWAKE_ACK_HSW = 0x130044;
+        GEN6_GT_THREAD_STATUS_REG = 0x13805c;
+        MI_PREDICATE_RESULT_2 = 0x2214;
+        RENDER_HWS_PGA_GEN7 = 0x04080;
+        HSW_IDICR = 0x9008;
+        GFX_FLSH_CNTL_HSW = 0x101008;
+    };
+
+    constants tlb_flush "some tlb constants" {
+        GFX_FLSH_CNTL_EN = 0x1;
+        GFX_TLB_INVALIDATE_ALWAYS = 0b10000000000000; // (1<<13)
+        GFX_REPLAY_MODE = 0b100000000000; // (1<<11)
+    };
+
+    constants ring_base "HSW ring base offsets" {
+        RENDER_RING_BASE = 0x02000;
+    };
+    
+    //TODO: Is needed? What is this?
+    constants lower_slices "lower slices offsets" {
+        lower_slice_enable = 1;
+        lower_slice_disable = 0;
+    };
+
+    constants cache "" {
+        cache_llc = 1;
+    };
+
+    constants ring_constants "ring constants" {
+        stop_ring = 0b100000000;
+        mode_idle = 0b1000000000;
+        vs_timer_dispatch = 0b1000000;
+        async_flip_pref_disble = 0b100000000000000;
+        seq_no_index = 0x20;
+        is_valid = 0x1;
+    };
+
+    constants more_ring_constants "" {
+        RING_NR_PAGES = 0x001FF000;
+        RING_HEAD_ADDR = 0x001FFFFC;
+        RING_TAIL_ADDR = 0x001FFFF8;
+        RING_FREE_SPACE = 64;
+    };
+
+    constants ring_instpm_constants "" {
+        instpm_tlb_invalidate = 0b1000000000;
+        instpm_sync_flush = 0b100000;
+        instpm_force_ordering = 0b10000000;
+    };
+
+    constants render_register_offsets "Ring register offsets" {
+        render_tail = 0x2030;
+        render_head = 0x2034;
+        render_start = 0x2038;
+        render_ctl = 0x203c;
+        render_mi_mode = 0x209c;
+        render_instpm = 0x20c0;
+        render_acthd = 0x2074;
+        render_instdone = 0x206c;
+        render_mode_gen7 = 0x229c;
+    };
+
+    register render_tail rw addr(base, 0x2030)
+             "ring tail" type(uint32);
+    register render_head rw addr(base, 0x2034)
+             "ring head" type(uint32);
+    register render_start rw addr(base, 0x2038)
+             "ring start reg" type(uint32);
+    register render_ctl rw addr(base, 0x203c)
+             "ring control register" type(uint32);
+    register render_mi_mode rw addr(base, 0x209c)
+             "ring mi mode" type(uint32);
+    register render_instpm rw addr(base, 0x20c0)
+             "ring instpm" type(uint32);
+    register render_acthd rw addr(base, 0x2074)
+             "ring active head" type(uint32);
+    register render_insdone rw addr(base, 0x206c)
+             "ring insdone" type(uint32);
+    register render_mode_gen7 rw addr(base, 0x229c)
+             "RING_MODE_GEN7" type(uint32);
+
+    /* Registers */
+    register FPGA_DBG rw addr(base, 0x42300)
+             "FPGA debug register" type(uint32);
+    register GTFIFODBG rw addr(base, 0x120000)
+             "GT FIFO Debug" type(uint32);
+    register FORCEWAKE rw addr(base, 0xA18C)
+             "FORCEWAKE" type(uint32);
+    register FORCEWAKE_MT rw addr(base, 0xA188)
+             "forcewake mt" type(uint32);
+    register ECOBUS ro addr(base, 0xA180)
+             "ecobus" type(uint32);
+    register FORCEWAKE_ACK_HSW ro addr(base, 0x130044)
+             "Haswell forcewake ack register" type(uint32);
+    register HSW_ERROR_INT rw addr(base, 0x44040)
+             "GEN7 ERR INT" type(uint32);
+    register GEN6_GT_THREAD_STATUS_REG ro addr(base, 0x13805c)
+             "Thread0 status register (same for hsw)" type(uint32);
+    register RENDER_HWS_PGA_GEN7 rw addr(base, 0x04080)
+             "RENDER HWS PGA GEN7" type(uint32);
+    register HSW_IDICR rw addr(base, 0x9008)
+             "TODO: Is needed?" type(uint32);
+    register GFX_FLSH_CNTL_HSW rw addr(base, 0x101008)
+             "GFX TLB FLUSH CONTROL" type(uint32);
+
+    register MI_PREDICATE_RESULT_2 rw addr(base, 0x2214)
+             "TODO: check if needed, hw init" type(uint32);
+};
