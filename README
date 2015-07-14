@@ -3,6 +3,10 @@ NUGPGPU using mackerel compiler.
 device/ - contains all the device specification.
 include/ - files needed by mackerel
 source/ - mackerel source
+bin/ - mackerel binaries
+generated/ - mackerel generated device header files
+
+SETUP - Mentions the steps to execute nugpgpu mackerel
 
 Copyright - 
 Dushyant Behl <myselfdushyantbehl@gmail.com>

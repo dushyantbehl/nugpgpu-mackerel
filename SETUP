@@ -1,0 +1,80 @@
+PART-1
+  To execute nugpgpu you'll need to make sure that i915 module is not
+  loaded in the system, drm module is also not needed but that is upto 
+  you if you want to remove it or not.
+
+  Blacklisting the i915 and drm modules - 
+
+    1. Open the file "/etc/modprobe.d/blacklist.conf"
+    2. Add the following commands at the end of the file
+
+      blacklist i915
+      blacklist i915_bdw
+      blacklist drm
+      blacklist drm_kms_helper
+      blacklist i2c_algo_bit
+      blacklist video
+
+  Boot the kernel in run level 3 (http://www.tldp.org/LDP/sag/html/run-levels-intro.html).
+  This could be done one time by editing boot entry in the grub menu but 
+  I provide a method to add a new entry to boot with drm and i915 disabled.
+
+    1. Open the file "/boot/grub/grub.cfg"
+    2. Locate the boot entry of your OS which you want to change.
+    3. Open the file "/etc/grub.d/40_custom"
+    4. Copy the boot entry from grub.cfg to 40_custom.
+
+    NOTE - One boot entry looks like  - 
+    menuentry 'Ubuntu' --class ubuntu .... {
+    ...
+    ...
+    }
+    Copy the complete menuentry from grub.cfg to the file 40_custom, 
+    change the name of the menuentry in the quotes '' to Ubuntu without i915 and DRM
+    
+    5. Edit the line in the menuentry which starts with "linux /boot/vmlinuz"
+    6. Add "i915.blacklist=yes drm_kms_helper.blacklist=yes drm.blacklist=yes"
+       before the parameters "quiet splash"
+    7. Add the number "3" at the end of the line (to boot in runlevel 3)
+
+  Your complete command line should look like -
+    linux /boot/vmlinuz root=UUID=XXXX-XX ro i915.blacklist=yes drm_kms_helper.blacklist=yes drm.blacklist=yes quiet splash $vt_handoff 3
+
+  After doing this you can update grub and initramfs.
+    sudo update-grub
+    sudo update-initramfs -u
+
+  After this you should see a boot entry in your grub named 'Ubuntu without i915 and DRM'
+  and you should boot this entry to test the execution of nugpgpu
+
+  NOTE - In the ubuntu distributions I've seen lightdm ignore these blacklisting 
+         of i915 and drm modules and load them anyway, so to get rid of this issue
+         I suggest that you don't use the desktop edition or remove lightdm by -
+
+          sudo apt-get remove lightdm
+
+PART-2
+  To run mackerel you need the Glasgow Haskell Compiler (ghc),
+  run the following commands - 
+
+    1. sudo apt-get install ghc
+    2. sudo apt-get install cabal-install
+    3. sudo cabal update
+    4. cabal install random
+    5. cabal install parsec
+    6. cabal install regex-compat
+
+  Note - If installing behind IITD Proxy / Anyother proxy you'll need to
+  sure that the environment variables "http_proxy" and "https_proxy" are
+  set prior to executing the cabal install commands.
+
+PART-3
+After completing all the setup go inside the nugpgpu-mackerel directory and
+run make. This will create the device headers and build a module nugpgpu.ko
+inside the same directory.
+
+Install the module with the command "sudo insmod nugpgpu.ko".
+
+Nugpgpu is highly verbose driver and you could see the 
+output it produces in dmesg by using -
+  dmesg | grep nugpgpu
