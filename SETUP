@@ -1,3 +1,5 @@
+ SETUP Tested on Ubuntu 14.04 LTS desktop instllation.
+
 PART-1
   To execute nugpgpu you'll need to make sure that i915 module is not
   loaded in the system, drm module is also not needed but that is up to 
