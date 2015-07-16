@@ -51,9 +51,8 @@ PART-1
 
   NOTE - In the ubuntu distributions I've seen lightdm ignore these blacklisting 
          of i915 and drm modules and load them anyway, so to get rid of this issue
-         I suggest that you don't use the desktop edition or remove lightdm by -
-
-          sudo apt-get remove lightdm
+         I suggest that you don't use the desktop edition or allow lightdm to
+         boot in runlevel 3 in the file "/etc/init/lightdm.conf"
 
 PART-2
   To run mackerel you need the Glasgow Haskell Compiler (ghc),
